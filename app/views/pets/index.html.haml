@@ -1,0 +1,87 @@
+.col-lg-2.col-xs-12.filter_search
+  %br
+  %p
+    %b.font-medium
+      Filtro de pesquisa
+  %button.btn.btn-info.form-control#btn-search{onclick: "search()"}
+    Pesquisar
+  .subFilter
+    %label.control-label.darkBlue Palavras chave
+    %input.form-control{:name => "search[key]",:id => "search_query",
+    :value => @field[:query].gsub!("_"," ") , :type => "text",:placeholder => "nome do cachorro, raça , etc..."}/
+  -@aggs.each_with_index do |f,id|
+    %input.hiddentop{type: "hidden",name: f[0],id: f[0],value: ""}
+    .subFilter
+      %label.control-label.darkBlue
+        =Pet.name_facets[f[0]]
+      -keyg = 0
+      -f[1]["buckets"].each_with_index do |term,key|
+        -var_class = " "
+        -keyg = key
+        -if key >= 10
+          -var_class = "hidden hiddenSubIten"+id.to_s
+        %p.subIntesUni{class: var_class}
+          %label.subItensSearch
+            -checked = false
+            -if !@field[f[0].to_sym].nil?
+              -if @field[f[0].to_sym].include? term["key"]
+                -checked = true
+            %input.subitem{type: "checkbox",name: "opt_search",subitem: f[0],checked: checked, value: term["key"],class: f[0]}
+            =term["key"]+" ("+term["doc_count"].to_s+")"
+      -if keyg >= 10
+        %p.vermais.darkBlue{value: 1,key: id, class: "vermais"+id.to_s}
+          %b
+            ver mais
+      -keyg = 0
+.col-lg-10.col-xs-12
+  %h1.header Cachorros
+  -if @pets.nil?
+    %span Nem um pet encontrado, verifique os termos de busca.
+  -else
+    -@pets.each_with_index do |pet,index|
+      .panel.panel-default
+        .panel-body
+          .row
+            .col-lg-4.col-xs-12
+              %p
+                Cachorro:
+                %b
+                  =pet.name
+              %p
+                Raça:
+                =pet.breed_name
+              %p
+                Idade:
+                =ajust_age(pet.age)
+            .col-lg-4.col-xs-12
+              %p
+                Cliente:
+                %b
+                  = pet.client_name
+              %p
+                Telefone:
+                = pet.phone
+            .col-lg-4.col-xs-12
+              %span Última visita: #{pet.last_visit.strftime("%d/%m/%Y %H:%M")}
+
+.col-lg-12.col-xs-12
+  .pull-right
+    = will_paginate @page, :previous_label => ' <span aria-hidden="true">&laquo;</span> ', :next_label => ' <span aria-hidden="true">&raquo;</span> ' ,renderer: BootstrapPaginationHelper::LinkRenderer
+:javascript
+
+  $(".subitem").click(function(){
+    if($(this).val() == $("#search_query").val()){
+      $("#search_query").attr("value","");
+    }
+    set_value_checked();
+    search();
+  });
+
+  $("#search_query").keyup(function(e){
+    if(e.keyCode == 13){
+      search();
+    }
+  });
+
+  vermais_search();
+  set_value_checked();
